@@ -1,0 +1,110 @@
+{
+  "nodes": [
+    {
+      "key": "0.0",
+      "attributes": {
+        "x": 268.72385,
+        "y": 91.18155,
+        "size": 3,
+        "label": "Authentication Service"
+      }
+    },
+    {
+      "key": "1.0",
+      "attributes": {
+        "x": 156.23423,
+        "y": 305.32123,
+        "size": 3,
+        "label": "User Service"
+      }
+    },
+    {
+      "key": "2.0",
+      "attributes": {
+        "x": 412.21312,
+        "y": 103.12312,
+        "size": 3,
+        "label": "Order Service"
+      }
+    },
+    {
+      "key": "3.0",
+      "attributes": {
+        "x": 178.22132,
+        "y": 450.11223,
+        "size": 3,
+        "label": "Inventory Service"
+      }
+    },
+    {
+      "key": "4.0",
+      "attributes": {
+        "x": 321.23132,
+        "y": 87.23132,
+        "size": 3,
+        "label": "Payment Service"
+      }
+    },
+    {
+      "key": "5.0",
+      "attributes": {
+        "x": 267.43123,
+        "y": 392.13423,
+        "size": 3,
+        "label": "Shipping Service"
+      }
+    },
+    {
+      "key": "6.0",
+      "attributes": {
+        "x": 500.12312,
+        "y": 66.21312,
+        "size": 3,
+        "label": "Notification Service"
+      }
+    },
+    {
+      "key": "7.0",
+      "attributes": {
+        "x": 150.31231,
+        "y": 310.23123,
+        "size": 3,
+        "label": "Product Service"
+      }
+    },
+    {
+      "key": "8.0",
+      "attributes": {
+        "x": 412.32412,
+        "y": 140.31231,
+        "size": 3,
+        "label": "Analytics Service"
+      }
+    },
+    {
+      "key": "9.0",
+      "attributes": {
+        "x": 267.43123,
+        "y": 292.13423,
+        "size": 3,
+        "label": "Review Service"
+      }
+    }
+  ],
+  "edges": [
+    { "key": "0", "source": "0.0", "target": "1.0", "attributes": { "files": 90, "gravity": 0.8 } },
+    { "key": "1", "source": "0.0", "target": "2.0", "attributes": { "files": 80, "gravity": 0.6 } },
+    { "key": "2", "source": "1.0", "target": "3.0", "attributes": { "files": 70, "gravity": 0.9 } },
+    { "key": "3", "source": "2.0", "target": "4.0", "attributes": { "files": 60, "gravity": 0.7 } },
+    { "key": "4", "source": "3.0", "target": "5.0", "attributes": { "files": 50, "gravity": 0.5 } },
+    { "key": "5", "source": "4.0", "target": "6.0", "attributes": { "files": 40, "gravity": 0.4 } },
+    { "key": "6", "source": "5.0", "target": "7.0", "attributes": { "files": 30, "gravity": 0.6 } },
+    { "key": "7", "source": "6.0", "target": "8.0", "attributes": { "files": 20, "gravity": 0.7 } },
+    { "key": "8", "source": "7.0", "target": "9.0", "attributes": { "files": 10, "gravity": 0.8 } },
+    { "key": "9", "source": "0.0", "target": "5.0", "attributes": { "files": 85, "gravity": 0.5 } },
+    { "key": "10", "source": "1.0", "target": "6.0", "attributes": { "files": 75, "gravity": 0.6 } },
+    { "key": "11", "source": "2.0", "target": "7.0", "attributes": { "files": 65, "gravity": 0.4 } },
+    { "key": "12", "source": "3.0", "target": "8.0", "attributes": { "files": 55, "gravity": 0.3 } },
+    { "key": "13", "source": "4.0", "target": "9.0", "attributes": { "files": 95, "gravity": 0.9 } }
+  ]
+}
