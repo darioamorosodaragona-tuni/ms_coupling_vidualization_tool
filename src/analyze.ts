@@ -8,6 +8,9 @@ import random from 'graphology-layout/random';
 import {EdgeDisplayData} from "sigma/types";
 import * as d3 from "d3";
 import {Options, SearchHTMLElements, State, ToolTipHTMLElements} from "./graphUtils";
+import {PipsMode, PipsType} from "nouislider";
+import * as noUiSlider from "nouislider";
+import wNumb from "wnumb";
 
 const microserviceColors: Record<string, string> = {};
 
@@ -113,6 +116,69 @@ function filterGraphData(graphData: GraphData, params: QueryParams): GraphData {
     };
 }
 
+function filterPips(value: number, type: PipsType) {
+    return 1;
+}
+function setupGravityFilter(graph: Graph, renderer: Sigma) {
+    const sliderElement = document.getElementById("gravity-range") as HTMLElement;
+    const minGravity = document.getElementById("min-gravity") as HTMLSpanElement;
+    const maxGravity = document.getElementById("max-gravity") as HTMLSpanElement;
+    // Initialize noUiSlider
+    const slider = noUiSlider.create(sliderElement, {
+        start: [0, 1], // Initial range values
+        connect: true,
+        behaviour: 'drag',
+        range: {
+            min: 0,
+            max: 1,
+        },
+        step: 0.1
+    });
+
+
+    slider.updateOptions({
+        pips : {mode: PipsMode.Steps, density: 100,
+            format: wNumb({
+                decimals: 1
+            }), filter: filterPips}
+    }, true)
+
+
+
+
+    // Listen for updates
+    slider.on("update", (values) => {
+        const [min, max] = values.map((v) => parseFloat(String(v)));
+        // minGravity.textContent = min.toFixed(1);
+        // maxGravity.textContent = max.toFixed(1);
+
+        // Filter the graph based on the range
+        filterGraphByGravity(graph, min, max);
+        renderer.refresh();
+    });
+}
+
+function filterGraphByGravity(graph: Graph, min: number, max: number) {
+    graph.forEachNode((node) => {
+        const edges = graph.edges(node);
+        const hasValidEdge = edges.some((edge) => {
+            const gravity = graph.getEdgeAttribute(edge, "gravity");
+            return gravity >= min && gravity <= max;
+        });
+
+        // Show/hide the node based on whether it has valid edges
+        graph.setNodeAttribute(node, "hidden", !hasValidEdge);
+    });
+
+    graph.forEachEdge((edge) => {
+        const gravity = graph.getEdgeAttribute(edge, "gravity");
+        const isVisible = gravity >= min && gravity <= max;
+
+        // Show/hide the edge
+        graph.setEdgeAttribute(edge, "hidden", !isVisible);
+    });
+}
+
 // Function to generate the graph data
 function generateGraphData(filteredData: any, params: QueryParams): Graph {
     const graph = new Graph();
@@ -208,24 +274,6 @@ function populateColorScaleLegend() {
     populateLegend(microserviceColors);
     populateColorScaleLegend()
 
-
-    // const positions = random(graph);
-
-// With options:
-//     const positions = random(graph, {rng: customRngFunction});
-
-// To directly assign the positions to the nodes:
-//     const positions = forceAtlas2(graph, {
-//         iterations: 50,
-//         settings: {
-//             gravity: 10
-//         }
-//     });
-
-
-
-
-
 // Start the algorithm:
     const sensibleSettings = forceAtlas2.inferSettings(graph);
     sensibleSettings.gravity = 2
@@ -237,10 +285,12 @@ function populateColorScaleLegend() {
     fa2Layout.start();
 
     // Create Sigma renderer
-    const container = document.getElementById("graph-container")!;
+    const container = document.getElementById("sigma-container")!;
     const renderer = new Sigma(graph, container ,{
         enableEdgeEvents: true
     });
+
+    setupGravityFilter(graph, renderer)
 
 
     setTimeout(() => {

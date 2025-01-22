@@ -1,0 +1,22 @@
+<!-- common.html -->
+<div id="sigma-container"></div>
+<div id="search">
+    <input type="search" id="search-input" list="suggestions" placeholder="Try searching for a node..." />
+    <datalist id="suggestions"></datalist>
+</div>
+<div id="tooltip" style="display:none;"></div>
+<div id="sidebar">
+    <div id="legend">
+        <div id="legend-items"></div>
+        <div id="color-scale-legend">
+            <strong>Coupling Severity:</strong>
+            <div id="color-scale-gradient"></div>
+            <span>Low</span>
+            <span style="float: right;">High</span>
+        </div>
+    </div>
+    <div id="gravity-filter">
+        <label for="gravity-range"><strong>Filter Microservices by Coupling Severity:</strong></label>
+        <div id="gravity-range"></div>
+    </div>
+</div>
