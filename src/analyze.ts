@@ -7,7 +7,7 @@ import random from 'graphology-layout/random';
 
 import {EdgeDisplayData} from "sigma/types";
 import * as d3 from "d3";
-import {Options} from "./graphUtils";
+import {Options, SearchHTMLElements, State, ToolTipHTMLElements} from "./graphUtils";
 
 const microserviceColors: Record<string, string> = {};
 
@@ -50,15 +50,7 @@ interface GraphData {
 }
 
 // Internal state:
-export interface State {
-    hoveredNode?: string;
-    hoveredEdge?: string;
-    searchQuery: string;
-    selectedNode?: string;
-    suggestions?: Set<string>;
-    hoveredNeighbors?: Set<string>;
-    hoovering?: boolean
-}
+
 let state: State = { searchQuery: "", hoovering: false};
 
 
@@ -250,24 +242,20 @@ function populateColorScaleLegend() {
         enableEdgeEvents: true
     });
 
+
     setTimeout(() => {
         fa2Layout.stop();
         renderer.refresh();
     }, 2500);
 
-
-    //DraggingMode
-    const customOptions = new Options(state, renderer, graph, true, true, true, true, true)
-
-
-    let result = customOptions.setDraggingMode(renderer, isDragging, draggedNode, graph)
-    isDragging = result.isDragging
-    draggedNode = result.draggedNode
+    const toolTipHtmlElements : ToolTipHTMLElements = {edgeTooltip: edgeTooltip, contentFunction: edgeContentBuilder};
+    const searchBarHtmlElements : SearchHTMLElements = {searchInput: searchInput, searchSuggestions: searchSuggestions};
 
 
-    customOptions.setEdgeColorBasedOnGravity();
-    state = customOptions.setSelectionOnHoovering(isDragging, draggedNode);
-    customOptions.setSearch(searchSuggestions, searchInput);
+    const  customOptions : Options = new Options(state, renderer, graph, toolTipHtmlElements,searchBarHtmlElements)
+    customOptions.apply()
+
+
     function edgeContentBuilder(edge: string, graph: Graph): string {
         return `
         <strong>Edge ID:</strong> ${edge}<br />
@@ -277,19 +265,6 @@ function populateColorScaleLegend() {
     `;
     }
 
-    customOptions.setToolTip(edgeTooltip, edgeContentBuilder, isDragging)
-
-    // // Add interaction handlers
-    // renderer.on("clickNode", (event: any) => {
-    //     alert(`Clicked on node: ${event.node}`);
-    // });
-    //
-    // renderer.on("clickEdge", (event: any) => {
-    //     const edgeData = graph.getEdgeAttributes(event.edge);
-    //     alert(
-    //         `Clicked on edge!\nFiles: ${edgeData.files}\nGravity: ${edgeData.gravity}`
-    //     );
-    // });
 
 
 })();

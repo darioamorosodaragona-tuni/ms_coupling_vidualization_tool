@@ -6,9 +6,28 @@ import forceAtlas2 from "graphology-layout-forceatlas2";
 import FA2Layout from "graphology-layout-forceatlas2/worker";
 
 import {Coordinates, EdgeDisplayData, NodeDisplayData, SigmaNodeEventPayload} from "sigma/types";
-import {State} from "./analyze"
 
 const colorScale = d3.scaleSequential(d3.interpolateReds).domain([0, 1]);
+export interface ToolTipHTMLElements {
+    edgeTooltip?: HTMLDivElement;
+    contentFunction? : (edge: string, graph: Graph)   => string;
+}
+
+export interface SearchHTMLElements {
+    searchSuggestions : HTMLDataListElement;
+    searchInput : HTMLInputElement
+}
+export interface State {
+    hoveredNode?: string;
+    hoveredEdge?: string;
+    searchQuery: string;
+    selectedNode?: string;
+    suggestions?: Set<string>;
+    hoveredNeighbors?: Set<string>;
+    hoovering?: boolean;
+    isDragging?: boolean;
+    draggedNode?: string | null;
+}
 
 export class Options{
     draggingMode: boolean;
@@ -19,8 +38,14 @@ export class Options{
     state : State;
     renderer: Sigma;
     graph: Graph;
+    toolTipHTMLElements: ToolTipHTMLElements;
+    searchHTMLElements: SearchHTMLElements;
+    toolTip: boolean;
+    edgeSizeBasedOn: ( (edge: string, graph: Graph) => number) | undefined  ;
 
-    constructor(state: State, renderer: Sigma, graph: Graph, draggingMode:boolean, hooveringEdge:boolean, hooveringNode :boolean, searchBar: boolean, colorBasedOnGravity: boolean) {
+
+    constructor(state: State, renderer: Sigma, graph: Graph, toolTipHTMLElements : ToolTipHTMLElements, searchHTMLElements : SearchHTMLElements, draggingMode:boolean = true, hooveringEdge:boolean = true, hooveringNode :boolean = true, searchBar: boolean = true, colorBasedOnGravity: boolean = true, toolTip: boolean = true, edgeSizeBasedOn  : ((string: string, graph: Graph) => number) | undefined = undefined ) {
+        this.toolTip = toolTip
         this.draggingMode = draggingMode;
         this.hooveringEdge = hooveringEdge;
         this.hooveringNode = hooveringNode;
@@ -29,25 +54,47 @@ export class Options{
         this.state = state;
         this.graph = graph;
         this.renderer = renderer;
+        this.toolTipHTMLElements = toolTipHTMLElements;
+        this.searchHTMLElements = searchHTMLElements;
+        this.edgeSizeBasedOn = edgeSizeBasedOn;
+
+
     }
 
-    setDraggingMode(renderer: Sigma, isDragging: boolean, draggedNode: string | null, graph: Graph) {
-        renderer.on("downNode", (e) => {
-            isDragging = true;
-            draggedNode = e.node;
-            graph.setNodeAttribute(draggedNode, "highlighted", true);
-            if (!renderer.getCustomBBox()) renderer.setCustomBBox(renderer.getBBox());
+    apply(){
+
+
+        if (this.draggingMode)
+            this.setDraggingMode()
+        if (this.hooveringEdge || this.hooveringNode)
+            this.setSelectionOnHoovering()
+        if(this.colorBasedOnGravity)
+            this.setEdgeColorBasedOnGravity()
+        if(this.searchBar)
+            this.setSearch()
+        if (this.toolTip)
+            this.setToolTip()
+        if(this.edgeSizeBasedOn)
+            this.applyEdgeReducer()
+
+    }
+    private setDraggingMode() {
+        this.renderer.on("downNode", (e) => {
+            this.state.isDragging = true;
+            this.state.draggedNode = e.node;
+            this.graph.setNodeAttribute(this.state.draggedNode, "highlighted", true);
+            if (!this.renderer.getCustomBBox()) this.renderer.setCustomBBox(this.renderer.getBBox());
         });
 
         // On mouse move, if the drag mode is enabled, we change the position of the draggedNode
-        renderer.on("moveBody", ({event}) => {
-            if (!isDragging || !draggedNode) return;
+        this.renderer.on("moveBody", ({event}) => {
+            if (!this.state.isDragging || !this.state.draggedNode) return;
 
             // Get new position of node
-            const pos = renderer.viewportToGraph(event);
+            const pos = this.renderer.viewportToGraph(event);
 
-            graph.setNodeAttribute(draggedNode, "x", pos.x);
-            graph.setNodeAttribute(draggedNode, "y", pos.y);
+            this.graph.setNodeAttribute(this.state.draggedNode, "x", pos.x);
+            this.graph.setNodeAttribute(this.state.draggedNode, "y", pos.y);
 
             // Prevent sigma to move camera:
             event.preventSigmaDefault();
@@ -57,20 +104,20 @@ export class Options{
 
         // On mouse up, we reset the dragging mode
         const handleUp = () => {
-            if (draggedNode) {
-                graph.removeNodeAttribute(draggedNode, "highlighted");
+            if (this.state.draggedNode) {
+                this.graph.removeNodeAttribute(this.state.draggedNode, "highlighted");
             }
-            isDragging = false;
-            draggedNode = null;
+            this.state.isDragging = false;
+            this.state.draggedNode = null;
         };
 
-        renderer.on("upNode", handleUp);
-        renderer.on("upStage", handleUp);
+        this.renderer.on("upNode", handleUp);
+        this.renderer.on("upStage", handleUp);
 
-        return {renderer, isDragging, draggedNode}
+        return this.renderer;
     }
 
-    setColor(data: any, res: Partial<EdgeDisplayData>) {
+    private setColor(data: any, res: Partial<EdgeDisplayData>) {
         const gravity = data.gravity
 
         // Color the edge based on the gravity value
@@ -81,7 +128,7 @@ export class Options{
         }
     }
 
-    applyNodeReducer(){
+    private applyNodeReducer(){
         this.renderer.setSetting("nodeReducer", (node, data) => {
             const res: Partial<NodeDisplayData> = {
                 ...data,
@@ -139,13 +186,17 @@ export class Options{
             return res;
         });
     }
-    applyEdgeReducer(){
+    private applyEdgeReducer(){
         this.renderer.setSetting("edgeReducer", (edge, data) => {
             const res: Partial<EdgeDisplayData> = {
                 ...data,
                 label: data.label,
                 color: data.color,
             };
+
+            if(this.edgeSizeBasedOn){
+                res.size = this.edgeSizeBasedOn(edge, this.graph);  // Assign the calculated edge size
+            }
 
             if (this.colorBasedOnGravity){
                 this.setColor(data, res)
@@ -206,50 +257,51 @@ export class Options{
 //     this.renderer.refresh();
 // });
 
-    applyOnLeaveEdge(isDragging?: boolean, edgeTooltip?: HTMLDivElement){
+    private applyOnLeaveEdge(){
        this.renderer.on("leaveEdge", () => {
            if(this.draggingMode) {
-               if (isDragging) return;
+               if (this.state.isDragging) return;
            }
            if(this.hooveringEdge) {
                this.setHoveredEdge(this.renderer, this.state, this.graph, undefined);
                this.state.hoovering = false;
            }
 
-           if(edgeTooltip)
-               edgeTooltip.style.display = "none";
+           if(this.toolTip && this.toolTipHTMLElements.edgeTooltip)
+               this.toolTipHTMLElements.edgeTooltip.style.display = "none";
 
            this.renderer.refresh();
         });
     }
-    applyOnEnterEdge(edgeTooltip: HTMLDivElement | undefined, contentBuilder?: (edge: string, graph: Graph)   => string
-    ){
+    private applyOnEnterEdge(){
 
         this.renderer.on("enterEdge", (event) => {
             const edge = event.edge;
-            const edgeData = this.graph.getEdgeAttributes(edge);
 
-            if(this.hooveringEdge) {
-               this.state.hoovering = true
-               this.setHoveredEdge(this.renderer, this.state, this.graph, edge);
-           }
+            if (this.hooveringEdge) {
+                this.state.hoovering = true
+                this.setHoveredEdge(this.renderer, this.state, this.graph, edge);
+            }
 
-            if(contentBuilder) {
-                const content = contentBuilder(edge, this.graph);
+            if(this.toolTip){
+                if (this.toolTipHTMLElements.contentFunction) {
+                    const content = this.toolTipHTMLElements.contentFunction(edge, this.graph);
 
-                // Set tooltip content
-                if (edgeTooltip && content) {
-                    edgeTooltip.innerHTML = content;
-                    edgeTooltip.style.display = "block";
+                    // Set tooltip content
+                    if (this.toolTipHTMLElements.edgeTooltip && content) {
+                        this.toolTipHTMLElements.edgeTooltip.innerHTML = content;
+                        this.toolTipHTMLElements.edgeTooltip.style.display = "block";
+                    }
                 }
             }
         });
+
     }
-    setEdgeColorBasedOnGravity() {
+    private setEdgeColorBasedOnGravity() {
       this.applyEdgeReducer();
     }
 
-    setHoveredEdge(renderer: Sigma, state: State, graph: Graph, edge?: string) {
+    private setHoveredEdge(renderer: Sigma, state: State, graph: Graph, edge?: string) {
         state.hoveredEdge = edge;
         if (!edge) {
             state.hoveredEdge = undefined;
@@ -257,16 +309,16 @@ export class Options{
 
         renderer.refresh();
     }
-    setSelectionOnHoovering(isDragging: boolean, draggedNode: string | null) {
+    private setSelectionOnHoovering() {
         this.applyEdgeReducer();
-        this.applyNodeReducer()
-        this.applyOnEnterEdge(undefined)
-        this.applyOnLeaveEdge(isDragging)
+        this.applyNodeReducer();
+        this.applyOnEnterEdge();
+        this.applyOnLeaveEdge();
         function setHoveredNode(renderer: Sigma, state: State, graph: Graph, node?: string, ) {
-            if (isDragging) {
-                if (draggedNode) {
-                    state.hoveredNode = draggedNode;
-                    state.hoveredNeighbors = new Set(graph.neighbors(draggedNode));
+            if (state.isDragging) {
+                if (state.draggedNode) {
+                    state.hoveredNode = state.draggedNode;
+                    state.hoveredNeighbors = new Set(graph.neighbors(state.draggedNode));
                 }
             } else if (node) {
                 state.hoovering = true
@@ -300,7 +352,7 @@ export class Options{
         });
 
         this.renderer.on("leaveNode", () => {
-            if(isDragging) return;
+            if(this.state.isDragging) return;
             setHoveredNode(this.renderer, this.state, this.graph,undefined);
             this.state.hoovering = false;
             this.renderer.refresh();
@@ -319,18 +371,18 @@ export class Options{
         return this.state
     }
 
-    setSearch(searchSuggestions : HTMLDataListElement, searchInput : HTMLInputElement) {
+    private setSearch() {
 
-        searchSuggestions.innerHTML = this.graph
+        this.searchHTMLElements.searchSuggestions.innerHTML = this.graph
             .nodes()
             .map((node) => `<option value="${this.graph.getNodeAttribute(node, "label")}"></option>`)
             .join("\n");
 
 
-        function setSearchQuery(state: State, graph: Graph, renderer: Sigma, query: string) {
+        function setSearchQuery(searchHTMLElements: SearchHTMLElements, state: State, graph: Graph, renderer: Sigma, query: string) {
             state.searchQuery = query;
 
-            if (searchInput.value !== query) searchInput.value = query;
+            if (searchHTMLElements.searchInput.value !== query) searchHTMLElements.searchInput.value = query;
 
             if (query) {
                 const lcQuery = query.toLowerCase();
@@ -362,28 +414,27 @@ export class Options{
 
 
         // Bind search input interactions:
-        searchInput.addEventListener("input", () => {
-            setSearchQuery(this.state, this.graph, this.renderer, searchInput.value || "");
+        this.searchHTMLElements.searchInput.addEventListener("input", () => {
+            setSearchQuery(this.searchHTMLElements, this.state, this.graph, this.renderer, this.searchHTMLElements.searchInput.value || "");
         });
-        searchInput.addEventListener("blur", () => {
-            setSearchQuery(this.state, this.graph, this.renderer, "");
+        this.searchHTMLElements.searchInput.addEventListener("blur", () => {
+            setSearchQuery(this.searchHTMLElements, this.state, this.graph, this.renderer, "");
         });
     }
 
-    setToolTip(edgeTooltip: HTMLDivElement, content: (edge: string, graph: Graph)   => string, isDragging?:boolean ){
+    private setToolTip(){
         this.renderer.getMouseCaptor().on("mousemove", (event) => {
-            if (edgeTooltip.style.display === "block") {
+            if (this.toolTipHTMLElements.edgeTooltip?.style.display === "block") {
                 const offsetX = window.scrollX || document.documentElement.scrollLeft;
                 const offsetY = window.scrollY || document.documentElement.scrollTop;
 
-                edgeTooltip.style.left = `${event.x + offsetX + 10}px`;
-                edgeTooltip.style.top = `${event.y + offsetY + 10}px`;
+                this.toolTipHTMLElements.edgeTooltip.style.left = `${event.x + offsetX + 10}px`;
+                this.toolTipHTMLElements.edgeTooltip.style.top = `${event.y + offsetY + 10}px`;
             }
         });
 
-        this.applyOnEnterEdge(edgeTooltip, content)
-        this.applyOnLeaveEdge(isDragging, edgeTooltip)
-
+        this.applyOnEnterEdge()
+        this.applyOnLeaveEdge()
 
     }
 }
