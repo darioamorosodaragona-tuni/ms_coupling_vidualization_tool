@@ -13,18 +13,7 @@ import 'nouislider/dist/nouislider.css';
 import wNumb from "wnumb"
 
 function filterPips(value: number, type: PipsType) {
-    debugger;
-    if (type === 0) {
-        // Show big pips at every 0.1
-        let v = value % 0.1 === 0 ? 1 : 0;
-        return v
-    }
-    if (type === 1 || type === 2) {
-        // Show small pips at every 0.05
-        let v = value % 0.05 === 0 ? 2 : -1
-        return v; // Return -1 to hide other pips
-    }
-    return -1; // Hide all other pips
+    return 1;
 }
 function setupGravityFilter(graph: Graph, renderer: Sigma) {
     const sliderElement = document.getElementById("gravity-range") as HTMLElement;
@@ -54,7 +43,7 @@ function setupGravityFilter(graph: Graph, renderer: Sigma) {
         pips : {mode: PipsMode.Steps, density: 100,
             format: wNumb({
                 decimals: 1
-            })}
+            }), filter: filterPips}
     }, true)
 
 
