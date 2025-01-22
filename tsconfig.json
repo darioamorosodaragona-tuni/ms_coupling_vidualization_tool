@@ -1,11 +1,13 @@
 {
   "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
-    "strict": true,
-    "esModuleInterop": true,
-    "outDir": "./dist",
-    "resolveJsonModule": true
+    "target": "es5",                // Ensures older browser compatibility.
+    "module": "commonjs",           // Keeps compatibility with Node.js and Sigma.js.
+    "strict": true,                 // Enables strict type checking.
+    "esModuleInterop": true,        // Ensures compatibility with ES modules.
+    "allowSyntheticDefaultImports": true, // Simplifies importing default exports.
+    "outDir": "./dist",             // Output directory for compiled files.
+    "resolveJsonModule": true,      // Allows importing JSON files.
+    "skipLibCheck": true            // Skips library type checking for compatibility.
   },
   "include": ["src/**/*"]
 }

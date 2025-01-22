@@ -22,6 +22,12 @@ module.exports = {
                 exclude: /node_modules\/index\/index_refactor\.ts/,
 
             },
+            {   test: /\.css$/, // Matches .css files
+                use: [
+                    'style-loader', // Injects styles into DOM
+                    'css-loader',   // Resolves CSS imports
+                ]
+            }
         ],
     },
     plugins: [

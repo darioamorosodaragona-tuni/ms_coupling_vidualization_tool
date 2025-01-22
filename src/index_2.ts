@@ -5,10 +5,94 @@ import Sigma from "sigma";
 import forceAtlas2 from "graphology-layout-forceatlas2";
 import FA2Layout from "graphology-layout-forceatlas2/worker";
 
-import {Coordinates, EdgeDisplayData, NodeDisplayData} from "sigma/types";
-
 import data from "../data/ms_data.json";
-import {ToolTipHTMLElements, Options, State, SearchHTMLElements} from "./graphUtils";
+import {Options, SearchHTMLElements, State, ToolTipHTMLElements} from "./graphUtils";
+import * as noUiSlider from 'nouislider';
+import {PipsMode, PipsType} from 'nouislider';
+import 'nouislider/dist/nouislider.css';
+import wNumb from "wnumb"
+
+function filterPips(value: number, type: PipsType) {
+    debugger;
+    if (type === 0) {
+        // Show big pips at every 0.1
+        let v = value % 0.1 === 0 ? 1 : 0;
+        return v
+    }
+    if (type === 1 || type === 2) {
+        // Show small pips at every 0.05
+        let v = value % 0.05 === 0 ? 2 : -1
+        return v; // Return -1 to hide other pips
+    }
+    return -1; // Hide all other pips
+}
+function setupGravityFilter(graph: Graph, renderer: Sigma) {
+    const sliderElement = document.getElementById("gravity-range") as HTMLElement;
+    const minGravity = document.getElementById("min-gravity") as HTMLSpanElement;
+    const maxGravity = document.getElementById("max-gravity") as HTMLSpanElement;
+    // Initialize noUiSlider
+    const slider = noUiSlider.create(sliderElement, {
+        start: [0, 1], // Initial range values
+        connect: true,
+        behaviour: 'drag',
+        range: {
+            min: 0,
+            max: 1,
+        },
+        step: 0.1
+    });
+
+
+    // slider.updateOptions({
+    //     pips : {mode: PipsMode.Steps, density: 1,
+    //         format: wNumb({
+    //             decimals: 1
+    //         }), filter: filterPips}
+    // }, true)
+
+    slider.updateOptions({
+        pips : {mode: PipsMode.Steps, density: 100,
+            format: wNumb({
+                decimals: 1
+            })}
+    }, true)
+
+
+
+
+    // Listen for updates
+    slider.on("update", (values) => {
+        const [min, max] = values.map((v) => parseFloat(String(v)));
+        // minGravity.textContent = min.toFixed(1);
+        // maxGravity.textContent = max.toFixed(1);
+
+        // Filter the graph based on the range
+        filterGraphByGravity(graph, min, max);
+        renderer.refresh();
+    });
+}
+
+function filterGraphByGravity(graph: Graph, min: number, max: number) {
+    graph.forEachNode((node) => {
+        const edges = graph.edges(node);
+        const hasValidEdge = edges.some((edge) => {
+            const gravity = graph.getEdgeAttribute(edge, "gravity");
+            return gravity >= min && gravity <= max;
+        });
+
+        // Show/hide the node based on whether it has valid edges
+        graph.setNodeAttribute(node, "hidden", !hasValidEdge);
+    });
+
+    graph.forEachEdge((edge) => {
+        const gravity = graph.getEdgeAttribute(edge, "gravity");
+        const isVisible = gravity >= min && gravity <= max;
+
+        // Show/hide the edge
+        graph.setEdgeAttribute(edge, "hidden", !isVisible);
+    });
+}
+
 
 function calculateEdgeSize( edge: string,  graph: Graph): number {
     const files = graph.getEdgeAttribute(edge, "files");
@@ -100,6 +184,9 @@ function initializeGraph() {
     const renderer = new Sigma(graph, container, {
         enableEdgeEvents: true
     });
+
+
+    setupGravityFilter(graph, renderer);
 
     // Run the layout for a specified number of iterations or until stable
     setTimeout(() => {

@@ -1,19 +1,14 @@
-<html lang="en">
+<html lang="en"><head><script defer src="dist/index.js"></script></head>
 <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Microservices Logical Coupling Visualization Tool</title>
-</head>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.js"></script>
+
 <body>
 <style>
-    html, body, #storybook-root, #sigma-container {
-        width: 100%;
-        height: 100%;
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow: hidden;
-    }
 
     #search {
         position: absolute;
@@ -21,32 +16,42 @@
         top: 1em;
     }
 
-    #legend {
+    html, body, #sigma-container {
+        width: 100%;
+        height: 100%;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden;
+    }
+
+    #sidebar {
         position: absolute;
-        left: 1em;
         top: 1em;
+        left: 1em;
+        background: white;
+        padding: 0.5em;
+        border-radius: 5px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 1em; /* Space between the legend and gravity filter */
+        width: 15%;
+    }
+
+    #legend {
         background: white;
         padding: 1em;
         border-radius: 5px;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         font-size: 0.9em;
-    }
-    #tooltip {
-        display: none;
-    }
-    .legend-item {
         display: flex;
-        align-items: center;
-        margin-bottom: 0.5em;
-    }
-    .legend-color {
-        width: 1em;
-        height: 1em;
-        margin-right: 0.5em;
-        border-radius: 50%;
+        flex-direction: column;
+        gap: 0.5em;
     }
 
     #color-scale-legend {
+        display: block;
+        flex-direction: column;
         margin-top: 10px;
     }
 
@@ -55,25 +60,81 @@
         font-size: 12px;
         margin-top: 5px;
     }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5em;
+    }
+
+    .legend-color {
+        width: 1em;
+        height: 1em;
+        margin-right: 0.5em;
+        border-radius: 50%;
+    }
+
+    #color-scale-gradient {
+        display: flex;
+        height: 10px;
+        /*background: linear-gradient(to right, #3498db, #db8bfa); !* Example gradient *!*/
+    }
+
+    #gravity-filter {
+        padding: 3em;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        background: white;
+        font-size: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.5em; /* Adds space between slider and values */
+    }
+
+    #gravity-filter input[type="range"] {
+        width: 100%;
+        margin-top: 5px;
+    }
+
+    #gravity-filter span {
+        font-size: 14px;
+        font-weight: bold;
+    }
+
+    .noUi-connect {
+        background: darkred; !important;
+    }
 </style>
 
 <!-- Sigma Container -->
 <div id="sigma-container"></div>
 
-<!-- Search Input -->
 <div id="search">
     <input type="search" id="search-input" list="suggestions" placeholder="Try searching for a node..." />
     <datalist id="suggestions"></datalist>
 </div>
 
 <div id="tooltip" style="display:none;"></div>
-<div id="legend">
-    <div id="legend-items"></div>
-    <div id="color-scale-legend">
-        <strong>Coupling Severity:</strong>
-        <div id="color-scale-gradient"></div>
-        <span>Low</span>
-        <span style="float: right;">High</span>
+
+<!-- Sidebar Container for both Legend and Gravity Filter -->
+<div id="sidebar">
+    <div id="legend">
+        <div id="legend-items"></div>
+        <div id="color-scale-legend">
+            <strong>Coupling Severity:</strong>
+            <div id="color-scale-gradient"></div>
+            <span>Low</span>
+            <span style="float: right;">High</span>
+        </div>
+    </div>
+
+    <div id="gravity-filter">
+        <label for="gravity-range"><strong>Filter Microservices by Coupling Severity:</strong></label>
+        <div id="gravity-range"></div>
+        <!--        <div>-->
+        <!--            <span>Min: <span id="min-gravity">0</span></span> |-->
+        <!--            <span>Max: <span id="max-gravity">1</span></span>-->
+        <!--        </div>-->
     </div>
 </div>
 
