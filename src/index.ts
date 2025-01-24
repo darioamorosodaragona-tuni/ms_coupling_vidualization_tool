@@ -259,10 +259,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // Dynamically load the common content, including the dropdown
     // Determine base URL dynamically
-    const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3001' : 'https://ms-coupling-visualization-tool.onrender.com';
+    const dataBaseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3001' : 'https://ms-coupling-visualization-tool.onrender.com';
 
 // Fetch the content of common.html and populate the page
-    fetch(`${baseUrl}/commonHtmlPage`)
+    fetch(`${dataBaseUrl}/commonHtmlPage`)
         .then(response => response.text())
         .then(data => {
             // Insert the dynamic content into the page
@@ -272,7 +272,7 @@ window.addEventListener("DOMContentLoaded", () => {
             // Now, populate the dropdown with file data
             const dropdown = document.getElementById("file-dropdown") as HTMLSelectElement;
             if (dropdown) {
-                fetch(`${baseUrl}/builds`)  // Use dynamic base URL here
+                fetch(`${dataBaseUrl}/builds`)  // Use dynamic base URL here
                     .then((response) => {
                         if (!response.ok) {
                             throw new Error(`Failed to fetch builds: ${response.statusText}`);
@@ -284,8 +284,8 @@ window.addEventListener("DOMContentLoaded", () => {
                         // Populate dropdown with file names
                         files.forEach((file) => {
                             const option = document.createElement("option");
-                            option.value = file;
-                            option.textContent = file;
+                            option.value = file.replace(".json", "");
+                            option.textContent = file.replace(".json", "");
                             dropdown.appendChild(option);
                         });
                         console.log("Dropdown populated successfully.");
@@ -318,7 +318,7 @@ window.addEventListener("DOMContentLoaded", () => {
             }
 
             // Initialize graph data first
-            initializeGraphData(baseUrl, filename, graph)
+            initializeGraphData(dataBaseUrl, filename, graph)
                 .then((graph) => {
                     // Once graph data is loaded, initialize the graph
                     initializeGraph(graph, commitBuild);
@@ -338,12 +338,12 @@ window.addEventListener("DOMContentLoaded", () => {
                     }
 
                     // Fetch and display the selected JSON file
-                    fetch(`/data/${selectedFile}`)
+                    fetch(`${dataBaseUrl}/data/${selectedFile}`)
                         .then((response) => response.json())
                         .then((data) => {
                             console.log("Selected file data:", data);
                             // alert(`Loaded file: ${selectedFile}`);
-                            const url = `index.html?buildId=${selectedFile.replace(".json", "")}`;
+                            const url = `${window.location.pathname}?buildId=${selectedFile.replace(".json", "")}`;
                             console.log("url", url);
 
                             // Open the URL in a new window or tab
