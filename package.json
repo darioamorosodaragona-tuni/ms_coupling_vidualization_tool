@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
   "keywords": [],
   "author": "",
@@ -28,10 +29,13 @@
     "@react-sigma/layout-noverlap": "^5.0.2",
     "cors": "^2.8.5",
     "d3": "^7.9.0",
+    "express": "^4.21.2",
+    "fs": "^0.0.1-security",
     "graphology-layout": "^0.6.1",
     "graphology-layout-force": "^0.2.4",
     "graphology-layout-forceatlas2": "^0.10.1",
     "nouislider": "^15.8.1",
+    "path": "^0.12.7",
     "wnumb": "^1.2.0"
   }
 }
