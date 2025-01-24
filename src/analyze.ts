@@ -11,7 +11,7 @@ import {Options, SearchHTMLElements, State, ToolTipHTMLElements} from "./graphUt
 import {PipsMode, PipsType} from "nouislider";
 import * as noUiSlider from "nouislider";
 import wNumb from "wnumb";
-import data from "../data/ms_files.json"
+
 
 const microserviceColors: Record<string, string> = {};
 
@@ -243,7 +243,7 @@ function populateColorScaleLegend() {
     `;
 }
 // Main function to render the graph
-function initialize() {
+function initialize(graphData: GraphData) {
     const searchInput = document.getElementById("search-input") as HTMLInputElement;
     const searchSuggestions = document.getElementById("suggestions") as HTMLDataListElement;
     const edgeTooltip = document.getElementById("tooltip") as HTMLDivElement;
@@ -266,11 +266,10 @@ function initialize() {
     }
 
     // Fetch the graph data from JSON
-    // const response = await fetch("/data/ms_files.json");
-    // const graphData: GraphData = await response.json();
+
 
     // Filter the graph data dynamically based on the query parameters
-    const filteredData = filterGraphData(data, params);
+    const filteredData = filterGraphData(graphData, params);
 
     // Generate graph data dynamically
     const graph = generateGraphData(filteredData, params);
@@ -290,7 +289,7 @@ function initialize() {
 
     // Create Sigma renderer
     const container = document.getElementById("sigma-container")!;
-    const renderer = new Sigma(graph, container ,{
+    const renderer = new Sigma(graph, container, {
         enableEdgeEvents: true
     });
 
@@ -302,11 +301,11 @@ function initialize() {
         renderer.refresh();
     }, 2500);
 
-    const toolTipHtmlElements : ToolTipHTMLElements = {edgeTooltip: edgeTooltip, contentFunction: edgeContentBuilder};
-    const searchBarHtmlElements : SearchHTMLElements = {searchInput: searchInput, searchSuggestions: searchSuggestions};
+    const toolTipHtmlElements: ToolTipHTMLElements = {edgeTooltip: edgeTooltip, contentFunction: edgeContentBuilder};
+    const searchBarHtmlElements: SearchHTMLElements = {searchInput: searchInput, searchSuggestions: searchSuggestions};
 
 
-    const  customOptions : Options = new Options(state, renderer, graph, toolTipHtmlElements,searchBarHtmlElements)
+    const customOptions: Options = new Options(state, renderer, graph, toolTipHtmlElements, searchBarHtmlElements)
     customOptions.apply()
 
 
@@ -322,8 +321,10 @@ function initialize() {
 }
 
 window.addEventListener("DOMContentLoaded", () =>{
+    const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3001' : 'https://ms-coupling-visualization-tool.onrender.com';
+
     // Dynamically load the common content
-    fetch('common.html')
+    fetch(`${baseUrl}/commonHtmlPage`)
         .then(response => response.text())
         .then(data => {
             // Insert the dynamic content into the page
@@ -331,9 +332,12 @@ window.addEventListener("DOMContentLoaded", () =>{
             commonContent.innerHTML += data;
 
             document.getElementById("build-selection")!.style.display = "none";
+            fetch(`${baseUrl}/data/ms_files`)
+                .then(response => response.json())
+                .then(data => {
+                    initialize(data)
+                })
 
-
-            initialize()
         });
 
 

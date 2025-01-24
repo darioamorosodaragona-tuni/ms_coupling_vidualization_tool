@@ -19,8 +19,8 @@ import {json} from "d3";
 interface QueryParams {
     buildID: string | null;
 }
-async function loadJSON(filename: string): Promise<any> {
-    const response = await fetch(`/data/${filename}`);
+async function loadJSON(url: string, filename: string): Promise<any> {
+    const response = await fetch(`${url}/data/${filename}`);
     if (!response.ok) {
         throw new Error(`Failed to load file: ${filename}`);
     }
@@ -28,8 +28,8 @@ async function loadJSON(filename: string): Promise<any> {
 }
 
 
-async function initializeGraphData(filename: string, graph: Graph) {
-    const data = await loadJSON(filename);
+async function initializeGraphData(url: string, filename: string, graph: Graph) {
+    const data = await loadJSON(url,filename);
     graph.import(data);
     return graph;
 }
@@ -252,7 +252,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // Initialize the graph and load initial data based on the URL parameters
     const graph = new Graph();
     const buildId = new URLSearchParams(window.location.search).get("buildId");
-    const filename = buildId ? `${buildId}.json` : "ms_data.json";
+    const filename = buildId ? `${buildId}` : "ms_data";
     let commitBuild = !!buildId;
 
 
@@ -318,7 +318,7 @@ window.addEventListener("DOMContentLoaded", () => {
             }
 
             // Initialize graph data first
-            initializeGraphData(filename, graph)
+            initializeGraphData(baseUrl, filename, graph)
                 .then((graph) => {
                     // Once graph data is loaded, initialize the graph
                     initializeGraph(graph, commitBuild);
