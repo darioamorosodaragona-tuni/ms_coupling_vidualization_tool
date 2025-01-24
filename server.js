@@ -42,6 +42,19 @@ app.get("/builds", (req, res) => {
     });
 });
 
+
+app.get("/commonHtmlPage", (req, res) => {
+    const filePath = path.join(__dirname, "public", `common.html`);
+    console.log("Requesting file:", filePath);
+
+    res.sendFile(filePath, (err) => {
+        if (err) {
+            console.error("Error sending file:", err);
+            res.status(404).send({ error: "File not found" });
+        }
+    });
+});
+
 // Start the server
 const PORT = process.env.PORT || 3001;
 

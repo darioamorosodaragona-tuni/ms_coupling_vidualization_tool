@@ -262,7 +262,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3001' : 'https://ms-coupling-visualization-tool.pages.dev/';
 
 // Fetch the content of common.html and populate the page
-    fetch('common.html')
+    fetch(`${baseUrl}/commonHtmlPage`)
         .then(response => response.text())
         .then(data => {
             // Insert the dynamic content into the page
