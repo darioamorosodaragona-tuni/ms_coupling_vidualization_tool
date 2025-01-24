@@ -7,8 +7,8 @@
     <title>Microservices Logical Coupling Visualization Tool</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/15.7.0/nouislider.min.js"></script>
-    <link href="style.css" rel="stylesheet">
-<script defer src="dist/index.js"></script></head>
+    <link href="../public/style.css" rel="stylesheet">
+<script defer src="../dist/analyze.js"></script></head>
 <body>
 <style>
     .noUi-connect {
@@ -18,15 +18,25 @@
     .noUi-pips {
         color: #2c2c2c; !important;
     }
+
+    .toggle-container{
+        display: none; !important;
+        visibility: hidden; !important;
+    }
+
+    .file-dropdown{
+        display: none; !important;
+        visibility: hidden; !important;
+    }
 </style>
 <div id="common-content"></div>
 <script>
     // Dynamically load the common content
-    fetch('common.html')
-        .then(response => response.text())
-        .then(data => {
-            document.getElementById('common-content').innerHTML = data;
-        });
+    // fetch('common.html')
+    //     .then(response => response.text())
+    //     .then(data => {
+    //         document.getElementById('common-content').innerHTML = data;
+    //     });
 </script>
 </body>
 </html>

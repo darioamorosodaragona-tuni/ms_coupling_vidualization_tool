@@ -11,19 +11,10 @@ import {Options, SearchHTMLElements, State, ToolTipHTMLElements} from "./graphUt
 import {PipsMode, PipsType} from "nouislider";
 import * as noUiSlider from "nouislider";
 import wNumb from "wnumb";
+import data from "../data/ms_files.json"
 
 const microserviceColors: Record<string, string> = {};
 
-const searchInput = document.getElementById("search-input") as HTMLInputElement;
-const searchSuggestions = document.getElementById("suggestions") as HTMLDataListElement;
-const edgeTooltip = document.getElementById("tooltip") as HTMLDivElement;
-edgeTooltip.style.position = "absolute";
-edgeTooltip.style.background = "white";
-edgeTooltip.style.border = "1px solid black";
-edgeTooltip.style.padding = "5px";
-edgeTooltip.style.borderRadius = "3px";
-edgeTooltip.style.display = "none";
-edgeTooltip.style.zIndex = "1000";
 
 // Type for the query parameters
 interface QueryParams {
@@ -41,14 +32,16 @@ interface GraphData {
             microservice_id: string;
             x: number;
             y: number;
+            label: string;
         };
-        label: string;
+
     }>;
     edges: Array<{
         source: string;
         target: string;
-        files: number;
-        gravity: number;
+        attributes : {
+            gravity: number;
+        }
     }>;
 }
 
@@ -250,7 +243,18 @@ function populateColorScaleLegend() {
     `;
 }
 // Main function to render the graph
-(async function () {
+function initialize() {
+    const searchInput = document.getElementById("search-input") as HTMLInputElement;
+    const searchSuggestions = document.getElementById("suggestions") as HTMLDataListElement;
+    const edgeTooltip = document.getElementById("tooltip") as HTMLDivElement;
+    edgeTooltip.style.position = "absolute";
+    edgeTooltip.style.background = "white";
+    edgeTooltip.style.border = "1px solid black";
+    edgeTooltip.style.padding = "5px";
+    edgeTooltip.style.borderRadius = "3px";
+    edgeTooltip.style.display = "none";
+    edgeTooltip.style.zIndex = "1000";
+
     let draggedNode: string | null = null;
     let isDragging = false;
 
@@ -262,11 +266,11 @@ function populateColorScaleLegend() {
     }
 
     // Fetch the graph data from JSON
-    const response = await fetch("/data/ms_files.json");
-    const graphData: GraphData = await response.json();
+    // const response = await fetch("/data/ms_files.json");
+    // const graphData: GraphData = await response.json();
 
     // Filter the graph data dynamically based on the query parameters
-    const filteredData = filterGraphData(graphData, params);
+    const filteredData = filterGraphData(data, params);
 
     // Generate graph data dynamically
     const graph = generateGraphData(filteredData, params);
@@ -315,6 +319,23 @@ function populateColorScaleLegend() {
     `;
     }
 
+}
+
+window.addEventListener("DOMContentLoaded", () =>{
+    // Dynamically load the common content
+    fetch('common.html')
+        .then(response => response.text())
+        .then(data => {
+            // Insert the dynamic content into the page
+            const commonContent = document.getElementById('common-content')!;
+            commonContent.innerHTML += data;
+
+            document.getElementById("build-selection")!.style.display = "none";
 
 
-})();
+            initialize()
+        });
+
+
+
+})

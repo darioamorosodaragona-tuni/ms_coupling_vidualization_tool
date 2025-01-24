@@ -1,0 +1,44 @@
+{
+  "nodes": [
+    {
+      "key": "1.0",
+      "attributes": {
+        "x": 156.23423,
+        "y": 305.32123,
+        "size": 3,
+        "label": "User Service"
+      }
+    },
+    {
+      "key": "2.0",
+      "attributes": {
+        "x": 412.21312,
+        "y": 103.12312,
+        "size": 3,
+        "label": "Order Service"
+      }
+    },
+    {
+      "key": "3.0",
+      "attributes": {
+        "x": 178.22132,
+        "y": 450.11223,
+        "size": 3,
+        "label": "Inventory Service"
+      }
+    },
+    {
+      "key": "4.0",
+      "attributes": {
+        "x": 321.23132,
+        "y": 87.23132,
+        "size": 3,
+        "label": "Payment Service"
+      }
+    }
+  ],
+  "edges": [
+    { "key": "2", "source": "1.0", "target": "3.0", "attributes": { "commit_files": 5, "files": 70, "previous_commit_gravity": 0.6 ,"commit_gravity": 0.7, "gravity": 0.9 } },
+    { "key": "3", "source": "2.0", "target": "4.0", "attributes": { "commit_files": 7, "files": 60, "previous_commit_gravity": 0.5, "commit_gravity": 0.8, "gravity": 0.9 } }
+  ]
+}

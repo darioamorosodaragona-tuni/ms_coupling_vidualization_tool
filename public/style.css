@@ -26,6 +26,17 @@ html, body, #sigma-container {
     width: 20%;
 }
 
+#build-selection {
+    padding: 3em;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    background: white;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em; /* Adds space between slider and values */
+}
+
 #legend {
     background: white;
     padding: 1em;
@@ -86,6 +97,39 @@ html, body, #sigma-container {
 #gravity-filter span {
     font-size: 14px;
     font-weight: bold;
+}
+
+
+ #toggle-container {
+     display: flex;
+     gap: 10px;
+     margin-top: 1em;
+ }
+
+.toggle-option {
+    padding: 10px 20px;
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    background-color: #e0e0e0;
+    color: #333;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.toggle-option.active {
+    background-color: #3498db;
+    color: white;
+}
+
+.toggle-option:hover {
+    background-color: #b3d8f7;
+}
+
+select, button {
+    margin: 10px 0;
+    padding: 10px;
+    font-size: 16px;
 }
 
 

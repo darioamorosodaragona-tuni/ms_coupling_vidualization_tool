@@ -1,36 +1,174 @@
-/**
- * This example showcases sigma's reducers, which aim to facilitate dynamically
- * changing the appearance of nodes and edges, without actually changing the
- * main graphology data.
- */
 import Graph from "graphology";
+import * as d3 from "d3";
+
 import Sigma from "sigma";
 import forceAtlas2 from "graphology-layout-forceatlas2";
 import FA2Layout from "graphology-layout-forceatlas2/worker";
 
-import { Coordinates, EdgeDisplayData, NodeDisplayData } from "sigma/types";
+// import data from "../data/ms_data.json";
 
-import data from "../data/data.json";
 
-function initializeGraph () {
-    console.log("Script is running");  // Add this at the top of index.ts
+
+import {Options, SearchHTMLElements, State, ToolTipHTMLElements} from "./graphUtils";
+import * as noUiSlider from 'nouislider';
+import {PipsMode, PipsType} from 'nouislider';
+import 'nouislider/dist/nouislider.css';
+import wNumb from "wnumb"
+import {json} from "d3";
+
+interface QueryParams {
+    buildID: string | null;
+}
+async function loadJSON(filename: string): Promise<any> {
+    const response = await fetch(`/data/${filename}`);
+    if (!response.ok) {
+        throw new Error(`Failed to load file: ${filename}`);
+    }
+    return response.json();
+}
+
+
+async function initializeGraphData(filename: string, graph: Graph) {
+    const data = await loadJSON(filename);
+    graph.import(data);
+    return graph;
+}
+
+
+function filterPips(value: number, type: PipsType) {
+    return 1;
+}
+
+
+function setupGravityFilter(graph: Graph, renderer: Sigma) {
+    const sliderElement = document.getElementById("gravity-range") as HTMLElement;
+    const minGravity = document.getElementById("min-gravity") as HTMLSpanElement;
+    const maxGravity = document.getElementById("max-gravity") as HTMLSpanElement;
+    // Initialize noUiSlider
+    const slider = noUiSlider.create(sliderElement, {
+        start: [0, 1], // Initial range values
+        connect: true,
+        behaviour: 'drag',
+        range: {
+            min: 0,
+            max: 1,
+        },
+        step: 0.1
+    });
+
+
+    // slider.updateOptions({
+    //     pips : {mode: PipsMode.Steps, density: 1,
+    //         format: wNumb({
+    //             decimals: 1
+    //         }), filter: filterPips}
+    // }, true)
+
+    slider.updateOptions({
+        pips : {mode: PipsMode.Steps, density: 100,
+            format: wNumb({
+                decimals: 1
+            }), filter: filterPips}
+    }, true)
+
+
+
+
+    // Listen for updates
+    slider.on("update", (values) => {
+        const [min, max] = values.map((v) => parseFloat(String(v)));
+        // minGravity.textContent = min.toFixed(1);
+        // maxGravity.textContent = max.toFixed(1);
+
+        // Filter the graph based on the range
+        filterGraphByGravity(graph, min, max);
+        renderer.refresh();
+    });
+}
+
+function filterGraphByGravity(graph: Graph, min: number, max: number) {
+    graph.forEachNode((node) => {
+        const edges = graph.edges(node);
+        const hasValidEdge = edges.some((edge) => {
+            const gravity = graph.getEdgeAttribute(edge, "gravity");
+            return gravity >= min && gravity <= max;
+        });
+
+        // Show/hide the node based on whether it has valid edges
+        graph.setNodeAttribute(node, "hidden", !hasValidEdge);
+    });
+
+    graph.forEachEdge((edge) => {
+        const gravity = graph.getEdgeAttribute(edge, "gravity");
+        const isVisible = gravity >= min && gravity <= max;
+
+        // Show/hide the edge
+        graph.setEdgeAttribute(edge, "hidden", !isVisible);
+    });
+}
+
+
+function calculateEdgeSize( edge: string,  graph: Graph): number {
+    const files = graph.getEdgeAttribute(edge, "files");
+
+    // Calculate a basic size based on the `files` attribute of both nodes
+    // normalize and limit between 3 and 19
+    return Math.min(19, Math.max(3, (files) / 10));
+}
+function populateColorScaleLegend() {
+    const colorScale = d3.scaleSequential(d3.interpolateReds).domain([0, 1]);
+    const colorScaleLegend = document.getElementById("color-scale-gradient")!;
+    colorScaleLegend.style.position = "relative";
+    colorScaleLegend.style.height = "20px";
+    colorScaleLegend.style.width = "100%";
+    colorScaleLegend.style.marginTop = "10px";
+    colorScaleLegend.style.background = `
+        linear-gradient(to right, 
+            ${colorScale(0)} 0%, 
+            ${colorScale(0.25)} 25%, 
+            ${colorScale(0.5)} 50%, 
+            ${colorScale(0.75)} 75%, 
+            ${colorScale(1)} 100%)
+    `;
+}
+function initializeGraph(graph: Graph, commitBuild: boolean) {
+    console.log("Script is running");
 
     // Retrieve some useful DOM elements:
     const container = document.getElementById("sigma-container") as HTMLElement;
-    console.log(container)
     const searchInput = document.getElementById("search-input") as HTMLInputElement;
-    console.log(searchInput)
     const searchSuggestions = document.getElementById("suggestions") as HTMLDataListElement;
-    console.log(searchSuggestions)
-    // Instantiate sigma:
-    const graph = new Graph();
-    graph.import(data);
-    console.log(data)
-    // Graphology provides a easy to use implementation of Force Atlas 2 in a web worker
+    const colorScale = d3.scaleSequential(d3.interpolateReds).domain([0, 1]);
+
+
+
+    document.addEventListener("DOMContentLoaded", () => {
+
+
+    });
+
+
+
+    graph.forEachNode((node, attributes) => {
+        // Custom logic to determine the size
+        // For example, size based on a specific attribute:
+        const size = 20; // Scale size (adjust the multiplier as needed)
+
+        // Update the node's size attribute
+        graph.setNodeAttribute(node, "size", size);
+        graph.setNodeAttribute(node, "color", "#3498db");
+
+    });
+
+    // Set uniform color for all nodes (elegant muted color)
+    populateColorScaleLegend();
+
+    // Graphology provides an easy-to-use implementation of Force Atlas 2 in a web worker
     const sensibleSettings = forceAtlas2.inferSettings(graph);
     const fa2Layout = new FA2Layout(graph, {
-        settings: sensibleSettings,
+        settings: sensibleSettings
     });
+
     const edgeTooltip = document.getElementById("tooltip") as HTMLDivElement;
     edgeTooltip.style.position = "absolute";
     edgeTooltip.style.background = "white";
@@ -39,271 +177,184 @@ function initializeGraph () {
     edgeTooltip.style.borderRadius = "3px";
     edgeTooltip.style.display = "none";
     edgeTooltip.style.zIndex = "1000";
-    // document.body.appendChild(edgeTooltip);
-
-    console.log("Tooltip style:", edgeTooltip.style);
 
 
-
+    // Assign random gravity values between 0 and 1 to each edge
 
 
     fa2Layout.start();
 
-
     const renderer = new Sigma(graph, container, {
         enableEdgeEvents: true
-        // enableEdgeHoverEvents: true,
-        // enableEdgeClickEvents: true,
-        // enableEdgeWheelEvents: true,
     });
 
-    fa2Layout.stop();
 
-    renderer.on("enterEdge", (event) => {
-        console.log("entering on edge")
+    setupGravityFilter(graph, renderer);
+
+
+
+    // Run the layout for a specified number of iterations or until stable
+    setTimeout(() => {
+        fa2Layout.stop();
+        renderer.refresh();
+    }, 5000);
+
+    // State for drag'n'drop
+
+
+    // Internal state:
+
+    const state: State = { searchQuery: "", hoovering: false};
+
+    function edgeContentBuilder(edge: string, graph: Graph): string {
+        return commitBuild ? ` <strong>Edge ID:</strong> ${edge}<br />
+        <strong>Source:</strong> ${graph.getNodeAttribute(graph.source(edge), "label")}<br />
+        <strong>Target:</strong> ${graph.getNodeAttribute(graph.target(edge), "label")}<br />
+        <strong>Previous Coupling:</strong> ${graph.getEdgeAttribute(edge, "previous_commit_gravity") || "N/A"}<br />
+        <strong>New Coupling:</strong> ${graph.getEdgeAttribute(edge, "commit_gravity") || "N/A"}<br />
+        <strong>Files:</strong> ${graph.getEdgeAttribute(edge, "commit_files") || "N/A"}<br /> ` :
+            `
+     <strong>Edge ID:</strong> ${edge}<br />
+    <strong>Source:</strong> ${graph.getNodeAttribute(graph.source(edge), "label")}<br />
+    <strong>Target:</strong> ${graph.getNodeAttribute(graph.target(edge), "label")}<br />
+    <strong>Coupling:</strong> ${graph.getEdgeAttribute(edge, "gravity") || "N/A"}<br />
+    <strong>Files:</strong> ${graph.getEdgeAttribute(edge, "files") || "N/A"}<br /> 
+    `;
+    }
+
+
+    const toolTipHtmlElements : ToolTipHTMLElements = {edgeTooltip: edgeTooltip, contentFunction: edgeContentBuilder};
+    const searchBarHtmlElements : SearchHTMLElements = {searchInput: searchInput, searchSuggestions: searchSuggestions};
+
+
+    const  opt : Options = new Options(state, renderer, graph, toolTipHtmlElements,searchBarHtmlElements,true, true, true, true,true, true, calculateEdgeSize)
+    opt.apply()
+
+
+    renderer.on("clickEdge", (event) => {
         const edge = event.edge;
         const edgeData = graph.getEdgeAttributes(edge);
 
-        // Set tooltip content
-        edgeTooltip.innerHTML = `
-      <strong>Edge ID:</strong> ${edge}<br />
-      <strong>Source:</strong> ${graph.source(edge)}<br />
-      <strong>Target:</strong> ${graph.target(edge)}<br />
-      <strong>Weight:</strong> ${edgeData.weight || "N/A"}
-    `;
-        edgeTooltip.style.display = "block";
-        console.log(edgeTooltip);
+        // Construct the URL with edge-specific information
+        const url = `analyze.html?source=${graph.source(edge)}&target=${graph.target(edge)}&files=${edgeData.files}&gravity=${edgeData.gravity}`;
+
+        // Open the URL in a new window or tab
+        window.open(url, "_blank");
     });
 
-    renderer.on("leaveEdge", () => {
-        edgeTooltip.style.display = "none";
-    });
-
-    renderer.getMouseCaptor().on("mousemove", (event) => {
-        if (edgeTooltip.style.display === "block") {
-            const offsetX = window.scrollX || document.documentElement.scrollLeft;
-            const offsetY = window.scrollY || document.documentElement.scrollTop;
-
-            edgeTooltip.style.left = `${event.x + offsetX + 10}px`;
-            edgeTooltip.style.top = `${event.y + offsetY + 10}px`;
-        }
-    });
-
-    // State for drag'n'drop
-    let draggedNode: string | null = null;
-    let isDragging = false;
-
-    // On mouse down on a node
-    //  - we enable the drag mode
-    //  - save in the dragged node in the state
-    //  - highlight the node
-    //  - disable the camera so its state is not updated
-    renderer.on("downNode", (e) => {
-        isDragging = true;
-        draggedNode = e.node;
-        graph.setNodeAttribute(draggedNode, "highlighted", true);
-        if (!renderer.getCustomBBox()) renderer.setCustomBBox(renderer.getBBox());
-    });
-
-    // On mouse move, if the drag mode is enabled, we change the position of the draggedNode
-    renderer.on("moveBody", ({ event }) => {
-        if (!isDragging || !draggedNode) return;
-
-        // Get new position of node
-        const pos = renderer.viewportToGraph(event);
-
-        graph.setNodeAttribute(draggedNode, "x", pos.x);
-        graph.setNodeAttribute(draggedNode, "y", pos.y);
-
-        // Prevent sigma to move camera:
-        event.preventSigmaDefault();
-        event.original.preventDefault();
-        event.original.stopPropagation();
-    });
-
-    // On mouse up, we reset the dragging mode
-    const handleUp = () => {
-        if (draggedNode) {
-            graph.removeNodeAttribute(draggedNode, "highlighted");
-        }
-        isDragging = false;
-        draggedNode = null;
-    };
-    renderer.on("upNode", handleUp);
-    renderer.on("upStage", handleUp);
-
-    // Type and declare internal state:
-    interface State {
-        hoveredNode?: string;
-        searchQuery: string;
-
-        // State derived from query:
-        selectedNode?: string;
-        suggestions?: Set<string>;
-
-        // State derived from hovered node:
-        hoveredNeighbors?: Set<string>;
-    }
-    const state: State = { searchQuery: "" };
-
-    // Feed the datalist autocomplete values:
-    searchSuggestions.innerHTML = graph
-        .nodes()
-        .map((node) => `<option value="${graph.getNodeAttribute(node, "label")}"></option>`)
-        .join("\n");
-
-    console.log(graph.nodes())
-    // Actions:
-    function setSearchQuery(query: string) {
-        state.searchQuery = query;
-
-        if (searchInput.value !== query) searchInput.value = query;
-
-        if (query) {
-            const lcQuery = query.toLowerCase();
-            const suggestions = graph
-                .nodes()
-                .map((n) => ({ id: n, label: graph.getNodeAttribute(n, "label") as string }))
-                .filter(({ label }) => label.toLowerCase().includes(lcQuery));
-
-            // If we have a single perfect match, them we remove the suggestions, and
-            // we consider the user has selected a node through the datalist
-            // autocomplete:
-            if (suggestions.length === 1 && suggestions[0].label === query) {
-                state.selectedNode = suggestions[0].id;
-                state.suggestions = undefined;
-
-                // Move the camera to center it on the selected node:
-                const nodePosition = renderer.getNodeDisplayData(state.selectedNode) as Coordinates;
-                renderer.getCamera().animate(nodePosition, {
-                    duration: 500,
-                });
-            }
-            // Else, we display the suggestions list:
-            else {
-                state.selectedNode = undefined;
-                state.suggestions = new Set(suggestions.map(({ id }) => id));
-            }
-        }
-        // If the query is empty, then we reset the selectedNode / suggestions state:
-        else {
-            state.selectedNode = undefined;
-            state.suggestions = undefined;
-        }
-
-        // Refresh rendering
-        // You can directly call `renderer.refresh()`, but if you need performances
-        // you can provide some options to the refresh method.
-        // In this case, we don't touch the graph data so we can skip its reindexation
-        renderer.refresh();
-    }
-    function setHoveredNode(node?: string) {
-        if(isDragging){
-            if(draggedNode){
-            state.hoveredNode = draggedNode;
-            state.hoveredNeighbors = new Set(graph.neighbors(draggedNode));
-            }
-        }
-
-        else if (node) {
-            state.hoveredNode = node;
-            state.hoveredNeighbors = new Set(graph.neighbors(node));
-        }
-
-
-
-        if (!node) {
-            state.hoveredNode = undefined;
-            state.hoveredNeighbors = undefined;
-        }
-
-        // Refresh rendering
-        renderer.refresh();
-    }
-
-    // Bind search input interactions:
-    searchInput.addEventListener("input", () => {
-        setSearchQuery(searchInput.value || "");
-    });
-    searchInput.addEventListener("blur", () => {
-        setSearchQuery("");
-    });
-
-    // Bind graph interactions:
-    renderer.on("enterNode", ({ node }) => {
-        setHoveredNode(node);
-    });
-    renderer.on("leaveNode", () => {
-        if(isDragging) return;
-        setHoveredNode(undefined);
-    });
-
-    // Render nodes accordingly to the internal state:
-    // 1. If a node is selected, it is highlighted
-    // 2. If there is query, all non-matching nodes are greyed
-    // 3. If there is a hovered node, all non-neighbor nodes are greyed
-    renderer.setSetting("nodeReducer", (node, data) => {
-
-        const res: Partial<NodeDisplayData> = {
-            ...data,
-            label: data.label,
-            color: data.color
-        };
-
-
-        if (state.hoveredNeighbors && !state.hoveredNeighbors.has(node) && state.hoveredNode !== node) {
-            res.label = "";
-            res.color = "#f6f6f6";
-        }
-
-        if (state.selectedNode === node) {
-            res.highlighted = true;
-        } else if (state.suggestions) {
-            if (state.suggestions.has(node)) {
-                res.forceLabel = true;
-            } else {
-                res.label = "";
-                res.color = "#f6f6f6";
-            }
-        }
-
-        return res;
-    });
-
-    // Render edges accordingly to the internal state:
-    // 1. If a node is hovered, the edge is hidden if it is not connected to the
-    //    node
-    // 2. If there is a query, the edge is only visible if it connects two
-    //    suggestions
-    renderer.setSetting("edgeReducer", (edge, data) => {
-        const res: Partial<NodeDisplayData> = {
-            ...data,
-            label: data.label,
-            color: data.color,
-        };
-
-        if (
-            state.hoveredNode &&
-            !graph.extremities(edge).every((n) => n === state.hoveredNode || graph.areNeighbors(n, state.hoveredNode))
-        ) {
-            res.hidden = true;
-        }
-
-        if (
-            state.suggestions &&
-            (!state.suggestions.has(graph.source(edge)) || !state.suggestions.has(graph.target(edge)))
-        ) {
-            res.hidden = true;
-        }
-
-        return res;
-    });
 
     return () => {
         renderer.kill();
     };
-};
+}
 
-window.onload = () => {
-    initializeGraph(); // Calls the function when page is fully loaded
-};
+window.addEventListener("DOMContentLoaded", () => {
+    // Initialize the graph and load initial data based on the URL parameters
+    const graph = new Graph();
+    const buildId = new URLSearchParams(window.location.search).get("buildId");
+    const filename = buildId ? `${buildId}.json` : "ms_data.json";
+    let commitBuild = !!buildId;
+
+
+
+    // Dynamically load the common content, including the dropdown
+    fetch('common.html')
+        .then(response => response.text())
+        .then(data => {
+            // Insert the dynamic content into the page
+            const commonContent = document.getElementById('common-content')!;
+            commonContent.innerHTML += data;
+
+            // Now, populate the dropdown with file data
+            const dropdown = document.getElementById("file-dropdown") as HTMLSelectElement;
+            if (dropdown) {
+                fetch("http://localhost:3001/builds")
+                    .then((response) => {
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch builds: ${response.statusText}`);
+                        }
+                        return response.json(); // Parse JSON response
+                    })
+                    .then((files: string[]) => {
+                        console.log("Available files:", files);
+                        // Populate dropdown with file names
+                        files.forEach((file) => {
+                            const option = document.createElement("option");
+                            option.value = file;
+                            option.textContent = file;
+                            dropdown.appendChild(option);
+                        });
+                        console.log("Dropdown populated successfully.");
+                    })
+                    .catch((error) => {
+                        console.error("Error loading files:", error);
+                    });
+            }
+
+
+            const option1 = document.getElementById("option-1");
+            const option2 = document.getElementById("option-2");
+
+            if(option1 && option2) {
+                // Add event listeners to both options
+                option1.addEventListener("click", () => toggleSelection("option1"));
+                option2.addEventListener("click", () => toggleSelection("option2"));
+            }
+            function toggleSelection(selectedOption: string) {
+                if (selectedOption === "option1" && option1 && option2) {
+                    option1.classList.add("active");
+                    option2.classList.remove("active");
+                    console.log("Option 1 selected");
+                    // Add logic for Option 1
+                } else if (selectedOption === "option2"  && option1 && option2) {
+                    option2.classList.add("active");
+                    option1.classList.remove("active");
+                    console.log("Option 2 selected");
+                    // Add logic for Option 2
+                }
+            }
+
+            // Initialize graph data first
+            initializeGraphData(filename, graph)
+                .then((graph) => {
+                    // Once graph data is loaded, initialize the graph
+                    initializeGraph(graph, commitBuild);
+                })
+                .catch((error) => {
+                    console.error("Error loading graph data:", error);
+                });
+
+            // Handle the "View" button click event
+            const viewButton = document.getElementById("view-button") as HTMLButtonElement;
+            if (viewButton) {
+                viewButton.addEventListener("click", () => {
+                    const selectedFile = dropdown?.value;
+                    if (!selectedFile) {
+                        alert("Please select a file!");
+                        return;
+                    }
+
+                    // Fetch and display the selected JSON file
+                    fetch(`/data/${selectedFile}`)
+                        .then((response) => response.json())
+                        .then((data) => {
+                            console.log("Selected file data:", data);
+                            // alert(`Loaded file: ${selectedFile}`);
+                            const url = `index.html?buildId=${selectedFile.replace(".json", "")}`;
+                            console.log("url", url);
+
+                            // Open the URL in a new window or tab
+                            window.open(url, "_blank");
+
+                        })
+                        .catch((error) => console.error("Error loading file:", error));
+                });
+            }
+        })
+        .catch((error) => {
+            console.error("Error loading common content:", error);
+        });
+});
+
+
+

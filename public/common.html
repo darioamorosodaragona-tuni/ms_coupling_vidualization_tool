@@ -19,4 +19,16 @@
         <label for="gravity-range"><strong>Filter Microservices by Coupling Severity:</strong></label>
         <div id="gravity-range"></div>
     </div>
+   <div id="build-selection">
+       <div><strong>Select a Build to see the state at the moment</strong></div>
+       <select id="file-dropdown">
+        <option value="" disabled selected>-- Select a build --</option>
+    </select>
+       <div id="toggle-container">
+           <button id="option-1" class="toggle-option">Commit</button>
+           <button id="option-2" class="toggle-option active">Application</button>
+       </div>
+       <button id="view-button">View</button>
+   </div>
+
 </div>

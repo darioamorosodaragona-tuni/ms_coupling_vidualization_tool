@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = {
     mode: 'development',
     entry: {
-        index: './src/index_2.ts',  // Entry point for the first HTML file
+        index: './src/index.ts',  // Entry point for the first HTML file
         analyze: './src/analyze.ts',      // Entry point for the second HTML file
     },
     output: {
@@ -16,6 +16,9 @@ module.exports = {
     },
     module: {
         rules: [
+            {  test: /\.json$/,
+                type: 'json',
+                include: path.resolve(__dirname, 'data')},
             {
                 test: /\.ts$/,
                 use: 'ts-loader',
@@ -33,12 +36,12 @@ module.exports = {
     plugins: [
         new HtmlWebpackPlugin({
             template: 'template/index.html',  // HTML template for the first file
-            filename: '../index.html',      // Output HTML file name
+            filename: '../public/index.html',      // Output HTML file name
             chunks: ['index'],           // Inject the corresponding JS file (index_2.js)
         }),
         new HtmlWebpackPlugin({
             template: 'template/analyze.html',    // HTML template for the second file
-            filename: '../analyze.html',        // Output HTML file name
+            filename: '../public/analyze.html',        // Output HTML file name
             chunks: ['analyze'],             // Inject the corresponding JS file (index.js)
         }),
     ],
