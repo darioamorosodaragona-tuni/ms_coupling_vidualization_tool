@@ -9,7 +9,7 @@ module.exports = {
     },
     output: {
         filename: '[name].js',  // This will generate index_2.js and index.js
-        path: path.resolve(__dirname, 'public'),
+        path: path.resolve(__dirname, 'public/assets'),
     },
     resolve: {
         extensions: ['.ts', '.js'],
