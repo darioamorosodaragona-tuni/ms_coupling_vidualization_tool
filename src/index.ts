@@ -259,7 +259,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // Dynamically load the common content, including the dropdown
     // Determine base URL dynamically
-    const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3001' : 'https://ms-coupling-visualization-tool.pages.dev/';
+    const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3001' : 'https://ms-coupling-visualization-tool.pages.dev';
 
 // Fetch the content of common.html and populate the page
     fetch(`${baseUrl}/commonHtmlPage`)
