@@ -36,12 +36,12 @@ module.exports = {
     plugins: [
         new HtmlWebpackPlugin({
             template: 'template/index.html',  // HTML template for the first file
-            filename: '../public/index.html',      // Output HTML file name
+            filename: '../index.html',      // Output HTML file name
             chunks: ['index'],           // Inject the corresponding JS file (index_2.js)
         }),
         new HtmlWebpackPlugin({
             template: 'template/analyze.html',    // HTML template for the second file
-            filename: '../public/analyze.html',        // Output HTML file name
+            filename: '../analyze.html',        // Output HTML file name
             chunks: ['analyze'],             // Inject the corresponding JS file (index.js)
         }),
     ],
