@@ -43,7 +43,11 @@ app.get("/builds", (req, res) => {
 });
 
 // Start the server
-const PORT = process.env.PORT || 3001; // Use the PORT environment variable for Render
+const PORT = process.env.PORT || 3001;
+
+
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    const host =
+        process.env.RENDER_EXTERNAL_HOSTNAME || `localhost:${PORT}`;
+    console.log(`Server running on ${host}`);
 });

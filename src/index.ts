@@ -258,6 +258,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
 
     // Dynamically load the common content, including the dropdown
+    // Determine base URL dynamically
+    const baseUrl = window.location.hostname === 'localhost' ? 'http://localhost:3001' : 'https://ms-coupling-visualization-tool.pages.dev/';
+
+// Fetch the content of common.html and populate the page
     fetch('common.html')
         .then(response => response.text())
         .then(data => {
@@ -268,7 +272,7 @@ window.addEventListener("DOMContentLoaded", () => {
             // Now, populate the dropdown with file data
             const dropdown = document.getElementById("file-dropdown") as HTMLSelectElement;
             if (dropdown) {
-                fetch("http://localhost:3001/builds")
+                fetch(`${baseUrl}/builds`)  // Use dynamic base URL here
                     .then((response) => {
                         if (!response.ok) {
                             throw new Error(`Failed to fetch builds: ${response.statusText}`);
@@ -290,7 +294,6 @@ window.addEventListener("DOMContentLoaded", () => {
                         console.error("Error loading files:", error);
                     });
             }
-
 
             const option1 = document.getElementById("option-1");
             const option2 = document.getElementById("option-2");
