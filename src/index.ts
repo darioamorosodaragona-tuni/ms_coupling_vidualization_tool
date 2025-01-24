@@ -34,6 +34,95 @@ async function initializeGraphData(url: string, filename: string, graph: Graph) 
     return graph;
 }
 
+interface Node {
+    key: string;
+    attributes: {
+        x: number;
+        y: number;
+        size: number;
+        label: string;
+        createdAt: number;
+    };
+}
+
+interface Edge {
+    key: string;
+    source: string;
+    target: string;
+    attributes: {
+        createdAt: number;
+        modifiedAt: number;
+        files: number;
+        gravity: number;
+        commit_files: number,
+        previous_commit_gravity: number,
+        commit_gravity: number,
+    };
+}
+
+async function initializeGraphData2(url: string, filename: string, graph: Graph) {
+    const generalData = await loadJSON(url, "ms_data");
+    const buildData = await loadJSON(url,filename);
+    const buildDate : number = buildData.buildDate;
+    let nodesToTake: Node[] = [];
+    let edgesToTake : Edge[] = [];
+
+    generalData.nodes.forEach((node: Node) => {
+        if (node.attributes.createdAt <= buildDate) {
+            nodesToTake.push(node)
+        }
+    });
+
+    generalData.edges.forEach((edge: Edge) =>{
+        if (edge.attributes.modifiedAt <= buildDate){
+            edgesToTake.push(edge)
+        }
+    });
+
+    // Replace edge data from buildData
+    edgesToTake.forEach((edge: Edge, index: number) => {
+        const matchingEdgeInBuildData = buildData.edges.find((buildEdge: Edge) => buildEdge.key === edge.key);
+
+        if (matchingEdgeInBuildData) {
+            // Replace the edge attributes with the corresponding values from buildData
+            edgesToTake[index] = {
+                ...edge,
+                attributes: {
+                    ...edge.attributes,
+                    ...matchingEdgeInBuildData.attributes // Overwrite with build data
+                }
+            };
+        }
+    });
+
+    graph.clear();
+
+    nodesToTake.forEach((nodeToTake) =>{
+        graph.addNode(nodeToTake.key, {
+            x: nodeToTake.attributes.x,
+            y: nodeToTake.attributes.y,
+            size: 20,
+            label: nodeToTake.attributes.label,
+            color: "#FEF0D9",
+        });
+    })
+
+    edgesToTake.forEach((edgeToTake)=>{
+        graph.addEdge(edgeToTake.source, edgeToTake.target, {
+            files: edgeToTake.attributes.files,
+            gravity: edgeToTake.attributes.gravity,
+            color: "#FEF0D9",
+            size: 3,
+            commit_files: edgeToTake.attributes.commit_files,
+            previous_commit_gravity: edgeToTake.attributes.previous_commit_gravity,
+            commit_gravity: edgeToTake.attributes.commit_gravity
+        });
+    });
+
+
+    return graph;
+}
+
 
 function filterPips(value: number, type: PipsType) {
     return 1;
@@ -57,12 +146,6 @@ function setupGravityFilter(graph: Graph, renderer: Sigma) {
     });
 
 
-    // slider.updateOptions({
-    //     pips : {mode: PipsMode.Steps, density: 1,
-    //         format: wNumb({
-    //             decimals: 1
-    //         }), filter: filterPips}
-    // }, true)
 
     slider.updateOptions({
         pips : {mode: PipsMode.Steps, density: 100,
@@ -70,7 +153,6 @@ function setupGravityFilter(graph: Graph, renderer: Sigma) {
                 decimals: 1
             }), filter: filterPips}
     }, true)
-
 
 
 
@@ -248,10 +330,42 @@ function initializeGraph(graph: Graph, commitBuild: boolean) {
     };
 }
 
+function toggleSelection(dataBaseUrl: string, graph: Graph, selectedOption: string, option1: HTMLElement, option2: HTMLElement, filename:string) {
+    if (selectedOption === "option1" && option1 && option2) {
+        option1.classList.add("active");
+        option2.classList.remove("active");
+        console.log("Option 1 selected");
+
+        // initializeGraphData2(dataBaseUrl, filename, graph)
+
+        const url = `${window.location.pathname}?buildId=${filename.replace(".json", "")}&commitView=true`;
+
+
+        console.log("url", url);
+        window.location.href = url;
+
+    } else if (selectedOption === "option2" && option1 && option2) {
+        option2.classList.add("active");
+        option1.classList.remove("active");
+        console.log("Option 2 selected");
+        // Add logic for Option 2
+        const url = `${window.location.pathname}?buildId=${filename.replace(".json", "")}&commitView=false`;
+        console.log("url", url);
+        window.location.href = url;
+    }
+}
 window.addEventListener("DOMContentLoaded", () => {
     // Initialize the graph and load initial data based on the URL parameters
     const graph = new Graph();
     const buildId = new URLSearchParams(window.location.search).get("buildId");
+    let var1 = new URLSearchParams(window.location.search).get("commitView")
+    let commitToggle = true
+    if(var1 !== null) {
+        if (var1 === "true")
+            commitToggle = true
+        if (var1 === "false")
+            commitToggle = false
+    }
     const filename = buildId ? `${buildId}` : "ms_data";
     let commitBuild = !!buildId;
 
@@ -271,7 +385,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
             // Now, populate the dropdown with file data
             const dropdown = document.getElementById("file-dropdown") as HTMLSelectElement;
+
             if (dropdown) {
+                if (commitBuild)
+                    if (buildId)
+                        dropdown.value = buildId;
                 fetch(`${dataBaseUrl}/builds`)  // Use dynamic base URL here
                     .then((response) => {
                         if (!response.ok) {
@@ -295,43 +413,58 @@ window.addEventListener("DOMContentLoaded", () => {
                     });
             }
 
-            const option1 = document.getElementById("option-1");
-            const option2 = document.getElementById("option-2");
+            if(commitBuild){
 
-            if(option1 && option2) {
-                // Add event listeners to both options
-                option1.addEventListener("click", () => toggleSelection("option1"));
-                option2.addEventListener("click", () => toggleSelection("option2"));
-            }
-            function toggleSelection(selectedOption: string) {
-                if (selectedOption === "option1" && option1 && option2) {
-                    option1.classList.add("active");
-                    option2.classList.remove("active");
-                    console.log("Option 1 selected");
-                    // Add logic for Option 1
-                } else if (selectedOption === "option2"  && option1 && option2) {
-                    option2.classList.add("active");
-                    option1.classList.remove("active");
-                    console.log("Option 2 selected");
-                    // Add logic for Option 2
+                const option1 = document.getElementById("option-1");
+                const option2 = document.getElementById("option-2");
+
+                if (option1 && option2) {
+                    // Add event listeners to both options
+                    option1.addEventListener("click", () => toggleSelection(dataBaseUrl, graph, "option1", option1, option2, filename));
+                    option2.addEventListener("click", () => toggleSelection(dataBaseUrl, graph,"option2", option1, option2, filename));
                 }
+
+                if (commitToggle && commitBuild) {
+                    option1!.classList.add("active");
+                    option2!.classList.remove("active");
+                } else if (commitBuild && !commitToggle) {
+                    option1!.classList.remove("active");
+                    option2!.classList.add("active");
+                }
+
+
+            } else{
+                document.getElementById("toggle-menu")!.style.display = "none";
             }
 
-            // Initialize graph data first
-            initializeGraphData(dataBaseUrl, filename, graph)
-                .then((graph) => {
-                    // Once graph data is loaded, initialize the graph
-                    initializeGraph(graph, commitBuild);
-                })
-                .catch((error) => {
-                    console.error("Error loading graph data:", error);
-                });
+            if(!commitToggle && commitBuild) {
+                // Initialize graph data first
+                initializeGraphData2(dataBaseUrl, filename, graph)
+                    .then((graph) => {
+                        // Once graph data is loaded, initialize the graph
+                        initializeGraph(graph, commitBuild);
+                    })
+                    .catch((error) => {
+                        console.error("Error loading graph data:", error);
+                    });
+            }
+            else {
+                // Initialize graph data first
+                initializeGraphData(dataBaseUrl, filename, graph)
+                    .then((graph) => {
+                        // Once graph data is loaded, initialize the graph
+                        initializeGraph(graph, commitBuild);
+                    })
+                    .catch((error) => {
+                        console.error("Error loading graph data:", error);
+                    });
+            }
 
             // Handle the "View" button click event
             const viewButton = document.getElementById("view-button") as HTMLButtonElement;
             if (viewButton) {
                 viewButton.addEventListener("click", () => {
-                    const selectedFile = dropdown?.value;
+                     const selectedFile = dropdown?.value;
                     if (!selectedFile) {
                         alert("Please select a file!");
                         return;

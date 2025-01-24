@@ -24,11 +24,13 @@
        <select id="file-dropdown">
         <option value="" disabled selected>-- Select a build --</option>
     </select>
-       <div id="toggle-container">
-           <button id="option-1" class="toggle-option">Commit</button>
-           <button id="option-2" class="toggle-option active">Application</button>
-       </div>
-       <button id="view-button">View</button>
+       <button id="view-button">Select</button>
    </div>
-
+    <div id="toggle-menu">
+        <div><strong>Views</strong></div>
+        <div id="toggle-container">
+            <button id="option-1" class="toggle-option" data-tooltip="View only changes made in the selected build.">Build</button>
+            <button id="option-2" class="toggle-option active" data-tooltip="View the full state of the application at the selected build.">Full Application</button>
+        </div>
+    </div>
 </div>

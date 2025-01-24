@@ -1,4 +1,5 @@
 {
+  "buildDate": 3,
   "nodes": [
     {
       "key": "1.0",
@@ -38,7 +39,7 @@
     }
   ],
   "edges": [
-    { "key": "2", "source": "1.0", "target": "3.0", "attributes": { "commit_files": 5, "files": 70, "previous_commit_gravity": 0.6 ,"commit_gravity": 0.7, "gravity": 0.9 } },
-    { "key": "3", "source": "2.0", "target": "4.0", "attributes": { "commit_files": 7, "files": 60, "previous_commit_gravity": 0.5, "commit_gravity": 0.8, "gravity": 0.9 } }
+    { "key": "2", "source": "1.0", "target": "3.0", "attributes": {"createdAt": 2, "modifiedAt": 3, "commit_files": 5, "files": 70, "previous_commit_gravity": 0.6 ,"commit_gravity": 0.7, "gravity": 0.9 } },
+    { "key": "3", "source": "2.0", "target": "4.0", "attributes": {"createdAt": 2, "modifiedAt": 3, "commit_files": 7, "files": 60, "previous_commit_gravity": 0.5, "commit_gravity": 0.8, "gravity": 0.9 } }
   ]
 }

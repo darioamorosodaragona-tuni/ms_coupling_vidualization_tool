@@ -99,11 +99,22 @@ html, body, #sigma-container {
     font-weight: bold;
 }
 
-
+#toggle-menu{
+    padding: 1em;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    background: white;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+    align-items: center;
+}
  #toggle-container {
      display: flex;
      gap: 10px;
      margin-top: 1em;
+     justify-content: center;
  }
 
 .toggle-option {
@@ -115,6 +126,31 @@ html, body, #sigma-container {
     color: #333;
     cursor: pointer;
     transition: background-color 0.3s ease;
+    position: relative;
+    margin: 5px;
+}
+
+.toggle-option::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%; /* Position above the button */
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: #fff;
+    padding: 5px;
+    border-radius: 4px;
+    white-space: nowrap;
+    font-size: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+    z-index: 10;
+}
+
+/* Show tooltip on hover */
+.toggle-option:hover::after {
+    opacity: 1;
 }
 
 .toggle-option.active {
